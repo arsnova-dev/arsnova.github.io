@@ -85,6 +85,8 @@
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script src="lib/Markdown.Converter.js"></script>
+    <script src="lib/Markdown.Sanitizer.js"></script>
 
     <script>
 	function load() {
@@ -92,10 +94,26 @@
 		var pageId = (/#!\/(.*)/).exec(location.hash);
 		if (pageId && pageId.length >= 2) {
 			console.log("hash", pageId[1]);
-			$("#main-content").load("content/" + pageId[1] + ".html");
+			var url, gh = false;
+			if (-1 === pageId[1].indexOf("/")) {
+				/* load local content */
+				url = "content/" + pageId[1] + ".html"
+				$("#main-content").load(url);
+			} else {
+				/* load content from GitHub project */
+				url = "https://api.github.com/repos/thm-projects/" + pageId[1];
+				$.getJSON(url, parseGhData);
+			}
 		} else if (!location.hash) {
+			/* redirect to homepage by default */
 			location.href = "home.html";
 		}
+	}
+
+	function parseGhData(data) {
+		var converter = Markdown.getSanitizingConverter();
+		var content = converter.makeHtml(atob(data.content));
+		$("#main-content").html(content);
 	}
 
 	window.addEventListener("load", load);
