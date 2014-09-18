@@ -104,6 +104,7 @@
 				url = "https://api.github.com/repos/thm-projects/" + pageId[1];
 				$.getJSON(url, parseGhData);
 			}
+			window.scrollTo(0, 0);
 		} else if (!location.hash) {
 			/* redirect to homepage by default */
 			location.href = "home.html";
