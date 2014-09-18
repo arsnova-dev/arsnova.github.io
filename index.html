@@ -88,6 +88,24 @@
 
 	<div id="main-content" class="container theme-showcase" role="main"></div>
 
+	<!-- Modal -->
+	<div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<h4 class="modal-title" id="modalLabel">Modal title</h4>
+				</div>
+				<div class="modal-body" id="modalBody">
+					...
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
 	<script src="lib/Markdown.Converter.js"></script>
@@ -98,28 +116,55 @@
 		console.log("load", location.hash);
 		var pageId = (/#!\/(.*)/).exec(location.hash);
 		if (pageId && pageId.length >= 2) {
-			console.log("hash", pageId[1]);
-			var url, gh = false;
-			if (-1 === pageId[1].indexOf("/")) {
-				/* load local content */
-				url = "content/" + pageId[1] + ".html"
-				$("#main-content").load(url);
-			} else {
-				/* load content from GitHub project */
-				url = "https://api.github.com/repos/thm-projects/" + pageId[1];
-				$.getJSON(url, parseGhData);
-			}
-			window.scrollTo(0, 0);
+			loadFragment(pageId[1]);
 		} else if (!location.hash) {
 			/* redirect to homepage by default */
 			location.href = "home.html";
 		}
 	}
 
+	function loadFragment(path, modal, title) {
+		console.log("loadFragment", path);
+		var callback, gh = false, url;
+		if (-1 === path.indexOf("/")) {
+			/* load local content */
+			url = "content/" + path + ".html";
+			$.get(url, function (data) {
+				if (modal) {
+					modalPopup(title, data);
+				} else {
+					$("#main-content").html(data);
+				}
+			})
+		} else {
+			/* load content from GitHub project */
+			url = "https://api.github.com/repos/thm-projects/" + path;
+			$.getJSON(url, function (data) {
+				var content = parseGhData(data);
+				if (modal) {
+					modalPopup(title || data.name, content);
+				} else {
+					$("#main-content").html(content);
+				}
+			});
+		}
+		if (!modal) {
+			window.scrollTo(0, 0);
+		}
+	}
+
 	function parseGhData(data) {
 		var converter = Markdown.getSanitizingConverter();
-		var content = converter.makeHtml(atob(data.content));
-		$("#main-content").html(content);
+		var content = data.body || atob(data.content);
+		content = converter.makeHtml(content);
+
+		return content;
+	}
+
+	function modalPopup(title, body) {
+		$("#modalLabel").html(title);
+		$("#modalBody").html(body);
+		$("#modal").modal();
 	}
 
 	window.addEventListener("load", load);
