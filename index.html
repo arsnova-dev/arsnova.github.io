@@ -156,7 +156,13 @@
 
 	function parseGhData(data, releaseMarkdown) {
 		var converter = Markdown.getSanitizingConverter();
-		var content = data.body || atob(data.content);
+		var content;
+		if (data.content) {
+			/* IE does not handle \n in base64 */
+			content = data.content.replace(/([\s]|\\n)/g, "");
+			content = atob(content);
+		}
+		content = content || data.body;
 		if (releaseMarkdown) {
 			/* fix GitHub pseudo Markdown for releases */
 			content = content.replace(/(.)\r?\n/g, "$1  \n");
