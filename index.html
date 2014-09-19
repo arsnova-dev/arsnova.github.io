@@ -140,7 +140,8 @@
 			/* load content from GitHub project */
 			url = "https://api.github.com/repos/thm-projects/" + path;
 			$.getJSON(url, function (data) {
-				var content = parseGhData(data);
+				var releaseMarkdown = !!data.tag_name;
+				var content = parseGhData(data, releaseMarkdown);
 				if (modal) {
 					modalPopup(title || data.name, content);
 				} else {
@@ -153,9 +154,14 @@
 		}
 	}
 
-	function parseGhData(data) {
+	function parseGhData(data, releaseMarkdown) {
 		var converter = Markdown.getSanitizingConverter();
 		var content = data.body || atob(data.content);
+		if (releaseMarkdown) {
+			/* fix GitHub pseudo Markdown for releases */
+			content = content.replace(/(.)\r?\n/g, "$1  \n");
+			console.log(content);
+		}
 		content = converter.makeHtml(content);
 
 		return content;
