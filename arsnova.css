@@ -1,0 +1,53 @@
+/*
+ * Bootstrap customization
+ */
+.navbar {
+  background: rgb(74, 92, 102);
+  background-image: linear-gradient(to bottom, rgb(93, 115, 128) 0, rgb(74, 92, 102) 100%);
+}
+
+.navbar-inverse .navbar-brand,
+.navbar-inverse .navbar-nav > li > a {
+	color: #ddd;
+}
+
+
+/*
+ * Cover customization
+ */
+.cover-page,
+.cover-page body {
+  background: rgb(74, 92, 102);
+}
+
+.cover-page .masthead-nav > li > a {
+  color: #fff;
+}
+
+.cover-page .masthead-nav > li > a:hover,
+.cover-page .masthead-nav > li > a:focus,
+.cover-page .masthead-nav > li > a:active {
+  border-bottom-color: rgb(255, 179, 0);
+}
+
+.cover-page .btn-primary {
+  background: rgb(128, 186, 36);
+  border-color: rgb(110, 161, 31);
+}
+
+.cover-page .btn-primary:hover,
+.cover-page .btn-primary:focus,
+.cover-page .btn-primary:active {
+  background: rgb(110, 161, 31);
+  border-color: rgb(93, 135, 26);
+}
+
+.cover-page .btn-link {
+  color: rgb(128, 186, 36);
+}
+
+.cover-page .btn-link:hover,
+.cover-page .btn-link:focus,
+.cover-page .btn-link:active {
+  color: rgb(110, 161, 31);
+}
