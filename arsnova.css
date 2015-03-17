@@ -4,6 +4,7 @@
 .navbar {
   background: rgb(74, 92, 102);
   background-image: linear-gradient(to bottom, rgb(93, 115, 128) 0, rgb(74, 92, 102) 100%);
+  border-bottom-color: rgb(56, 69, 77);
 }
 
 .navbar-inverse .navbar-brand,
