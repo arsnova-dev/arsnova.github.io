@@ -1,12 +1,187 @@
-<div class="alert alert-warning" role="alert">
-	This page is a work in progress. Please check back soon.
-</div>
-
 <div class="page-header">
-	<h1>Installation Guides</h1>
+	<h1>Installation Guide</h1>
 </div>
+<h2>Requirements</h2>
 <ul>
-	<li><a href="/#/arsnova-backend/contents/README.md">Installation of ARSnova Backend</a></li>
-	<li><a href="/#/arsnova-mobile/contents/README.md">Installation of ARSnova Mobile</a></li>
-	<li><a href="/#/arsnova-presenter/contents/README.md">Installation of ARSnova Presenter</a></li>
+	<li>OpenJRE version &gt;=7</li>
+	<li>Python 2.7 (Python 3 is <b>not</b> backwards compatible)</li>
+	<li>Apache HTTPD &gt;=2.2 with mod_rewrite and mod_jk</li>
+	<li>Apache Tomcat version &gt;=7</li>
+	<li>Apache CouchDB verson &gt;1.0 (>=1.2 is recommended)</li>
 </ul>
+<br/>
+<div class="well well-sm">
+	On Debian 7, the requirements are in the official repositories so you don't need to compile the couchdb.
+	<br/>Note: Java 8 is not in the official repositories
+</div>
+<h2>Installing the requirements on a Debian 8</h2>
+<div class="well well-sm">For Java 8 you need to add the backports to the sources.list as described <a href="http://backports.debian.org/Instructions/">here</a></div>
+<div class="code">
+		apt-get install openjdk-8-jre python2.7 apache2 libapache2-mod-jk tomcat8
+</div>
+<h3>couchDB</h3>
+<p>
+	You can find the sourcecode <a href="http://couchdb.apache.org/">here</a>.<br/>
+	If you are running on an Ubuntu, there is a PPA <a href="https://launchpad.net/~couchdb/+archive/ubuntu/stable">here</a>.
+</p>
+<h4>Installing the prerequirements</h4>
+<div class="code">
+	apt-get install erlang-base-hipe erlang-dev erlang-manpages erlang-eunit erlang-nox libtool autoconf automake autoconf-archive pkg-config libssl-dev zlib1g-dev libcurl4-openssl-dev libncurses5-dev libmozjs185-dev libicu-dev xsltproc<br/>
+</div>
+<h4>Compiling and installing the source code</h4>
+<div class="code">
+	./configure --prefix=/usr/local --with-js-lib=/usr/lib --with-js-include=/usr/include/mozjs --enable-init<br/>
+	make &amp;&amp; make install
+</div>
+<h4>Add user/group and startscript</h4>
+<div class="code">
+	useradd -r -d /usr/local/var/lib/couchdb couchdb<br/>
+	chown -R couchdb:couchdb /usr/local/{lib,etc}/couchdb /usr/local/var/{lib,log,run}/couchdb<br/>
+	chmod -R g+rw /usr/local/{lib,etc}/couchdb /usr/local/var/{lib,log,run}/couchdb<br/>
+	ln -s /usr/local/etc/init.d/couchdb /etc/init.d/<br/>
+	update-rc.d couchdb defaults<br/>
+	# Verify CouchDB is running<br/>
+	curl http://127.0.0.1:5984/<br/>
+</div>
+<br/>
+<h2>ARSnova Setup</h2>
+<h3>Directories and Permissions</h3>
+<div class="code">
+	mkdir /var/lib/tomcat8/sessions<br/>
+	chown tomcat8:tomcat8 /var/lib/tomcat8/sessions<br/>
+	# ARSnova configurationdirectory<br/>
+	mkdir /etc/arsnova<br/>
+	chown tomcat8:tomcat8 /etc/arsnova<br/>
+</div>
+<h3>ARSnova configuration</h3>
+<p>
+	ARSnova uses a central configuration file. You can find an example <a href="https://github.com/thm-projects/arsnova-backend/blob/master/src/main/resources/arsnova.properties.example">here</a>.<br/>
+	The file needs to be modified, moved and renamed to <code>/etc/arsnova/arsnova.properties</code>.
+</p>
+<p>
+	Furthermore, you need to create the file <code>/etc/arsnova/workers.properties</code> with the following content:
+</p>
+<div class="code">
+	worker.list=balancer,stat<br/>
+	<br/>
+	# Balancer<br/>
+	worker.balancer.type=lb<br/>
+	worker.balancer.balance_workers=tomcat1<br/>
+	<br/>
+	# Status worker<br/>
+	worker.stat.type=status<br/>
+	<br/>
+	# Tomcat nodes<br/>
+	worker.tomcat1.type=ajp13<br/>
+	worker.tomcat1.host=127.0.0.1<br/>
+	worker.tomcat1.port=8009
+</div>
+<h3>Deployment</h3>
+<p>
+	ARSnova is split up in different modules. You can find everything under <a href="https://github.com/thm-projects/">https://github.com/thm-projects/</a>.
+	Three modules are neccessary, arsnova-customization is not needed if you only use guest and/or social media login. We offer Java-Webarchives (.war-files) for the frontend &amp; backend.
+</p>
+<div class="list-group" style="width:250px;margin-left:50px">
+	<a href="https://github.com/thm-projects/arsnova-mobile/releases" target="_blank" class="list-group-item">Mobile</a>
+	<a href="https://github.com/thm-projects/arsnova-backend/releases" target="_blank" class="list-group-item">Backend</a>
+	<a href="https://github.com/thm-projects/arsnova-setuptool/releases" target="_blank" class="list-group-item">Setuptool</a>
+	<a href="https://github.com/thm-projects/arsnova-customization" target="_blank" class="list-group-item">Customization</a>
+</div>
+<div class="well well-sm">Note: arsnova-customization has no releases. You need to just download the files</div>
+<h4>DB Setup</h4>
+<div class="code">
+	# change &lt;password&gt; - you need it in the arsnova.properties file<br/>
+	curl -X PUT localhost:5984/_config/admins/arsnova -d '"&lt;password&gt;"'<br/>
+	# sets the revision limit to 20<br/>
+	curl -u arsnova -p -X PUT -d "20" localhost:5984/arsnova/_revs_limit
+</div>
+<p>
+	To populate the Database with the views, you need to uncompress the setuptool and start the setupscript with <code>python tool.py</code>. <br/>
+	You can test your setup with <code>curl localhost:5984/arsnova</code>. You should get a json with a property "arsnova".
+</p>
+<p>
+	The webarchives (excluding the setuptool) must be moved to <code>/var/lib/tomcat8/</code>. If tomcat has the standard configuration, it will deploy the archives automatically.
+</p>
+<p>
+	It's important that the path variables in the arsnova.properties are the same as the directory names of the modules. For Example: If the mobile directory has the path <code>/var/lib/tomcat8/arsnova-mobile-2.2.0/</code>, you need to change the mobile path in the properties file to <code>mobile.path=/arsnova-mobile-2.2.0</code>.
+</p>
+<h3>Apache2 configuration</h3>
+<p>Preparation</p>
+<div class="code">
+	# activate both modules<br/>
+	a2enmod jk<br/>
+	a2enmod rewrite<br/>
+</div>
+<p>Change the attribute <code>JKWorkersFile</code> in <code>/etc/apache2/mods-available/jk.conf</code> to the path of the previously created workers.properties:</p>
+<div class="code">
+	#JkWorkersFile /etc/libapache2-mod-jk/workers.properties<br/>
+  JkWorkersFile /etc/arsnova/workers.properties
+</div>
+<p>There is a link to a default vHost configuration file including SSL configuration down below in the Security section.<br/>
+	For the Apache2 vHost, you need at least the following instructions (besides the usual)</p>
+<div class="code">
+	# ARSnova on Tomcat<br/>
+	# Change these paths in case you deployed the WAR files to different contexts<br/>
+	JkMount /api* balancer<br/>
+	JkMount /mobile* balancer<br/>
+	JkMount /presenter* balancer<br/>
+	JkMount /mlu* balancer<br/>
+	<br/>
+	# rewrites<br/>
+	RewriteEngine On<br/>
+	RewriteRule ^/$ /mobile/ [R=301,L]<br/>
+	RewriteRule ^/arsnova-config$ /api/configuration/ [PT,L]<br/>
+	<br/>
+	# MSIE 7 and newer should be able to use keepalive<br/>
+	BrowserMatch "MSIE [17-9]" ssl-unclean-shutdown
+</div>
+<h3>Security</h3>
+<p>
+	It's highly recommended to use TLS for both the Apache HTTPD and the Tomcat!<br/>
+	You need to add TLS support to your vHost (<a href="/content/arsnova_vhost_example.conf">sample vHost config</a>) and add the certificate to tomcat by following the three steps:
+</p>
+<h4>1. Convert the certificate to the PKCS12-format</h4>
+<div class="code">
+	openssl pkcs12 -export -in &lt;servercert&gt;.crt \<br/>
+               -inkey &lt;serverkey&gt;.key \<br/>
+               -out keystore.p12 -name 1 \<br/>
+               -certfile &lt;your_cert_chain_file&gt;
+</div>
+<h4>2. Add the new generated file <code>keystore.p12</code> to the java key-store</h4>
+<div class="code">
+	keytool -importkeystore \<br/>
+        -deststorepass &lt;your_java_keystore_password&gt; \<br/>
+        -destkeypass &lt;your_java_keystore_password&gt; \<br/>
+        -destkeystore arsnova.jks \<br/>
+        -srckeystore keystore.p12 \<br/>
+        -srcstoretype PKCS12 \<br/>
+        -srcstorepass &lt;your_pkcs12_keystore_password&gt; \<br/>
+        -alias 1
+</div>
+<h4>3. Change the arsnova.properties</h4>
+<div class="code">
+	security.keystore=&lt;path_to_your_keystore&gt;<br/>
+	security.storepass=&lt;your_password&gt;
+</div>
+<h3>Firewall</h3>
+<p>Default public ports and protocolls used/required by ARSnova</p>
+<ul>
+	<li>80 - Apache HTTPD</li>
+	<li>443 - Apache HTTPD TLS (only when activated)</li>
+	<li>10443 - WebSocket</li>
+</ul>
+<p>Internal ports</p>
+<ul>
+	<li>5984 - CouchDB</li>
+	<li>8009 - Tomcat AJP</li>
+	<li>8080 - Tomcat HTTP</li>
+</ul>
+<h3>Misc</h3>
+It's recommended to tweak the settings of tomcat with at least the following settings. If you installed tomcat via package management, the defaults configuration file is located at <code>/etc/default/tomcat8</code>.
+<div class="code">
+	JAVA_OPTS=" -Xms2048m -Xmx2048m -XX:PermSize=256m -XX:MaxPermSize=256m"
+</div>
+<h2>Finish</h2>
+<p>
+	Restart everything and try it!
+</p>
